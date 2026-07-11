@@ -23,3 +23,5 @@
 - [ ] Create a GitHub pre-release using the changelog notes.
 - [ ] Verify installation instructions from the public repository.
 - [ ] Share only anonymized screenshots and example data.
+
+Authenticated repository setup is documented in [GITHUB_RELEASE_SETUP.md](GITHUB_RELEASE_SETUP.md).

@@ -305,3 +305,4 @@
 ### 外部设置
 
 - GitHub About description/topics、Pre-release 和 branch protection 需要已登录的 GitHub 管理会话。
+- 已增加幂等发布脚本与管理员设置指南，登录 `gh` 后可一次完成 push、About/topics 和 Pre-release。

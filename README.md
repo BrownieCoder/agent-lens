@@ -157,4 +157,5 @@ See [PLAN.md](PLAN.md) for implementation notes and optimization directions.
 - Contributions: [CONTRIBUTING.md](CONTRIBUTING.md)
 - Changelog: [CHANGELOG.md](CHANGELOG.md)
 - Release checklist: [docs/RELEASE_CHECKLIST.md](docs/RELEASE_CHECKLIST.md)
+- GitHub release setup: [docs/GITHUB_RELEASE_SETUP.md](docs/GITHUB_RELEASE_SETUP.md)
 - License: [MIT](LICENSE)
