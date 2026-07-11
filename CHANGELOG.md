@@ -2,7 +2,7 @@
 
 All notable changes to Agent Lens are documented here. The project follows Semantic Versioning once it reaches a stable release.
 
-## [0.1.0-alpha] - Unreleased
+## [0.1.0-alpha] - 2026-07-12
 
 ### Added
 

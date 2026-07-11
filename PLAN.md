@@ -284,3 +284,24 @@
 
 - 发布后增加录屏、在线 Demo、真实匿名案例和性能基准。
 - 增加 Alembic、认证、Postgres、OpenTelemetry 和 Prompt CI quality gate。
+
+## 12. GitHub public release execution
+
+**状态：进行中**
+
+### 已完成
+
+- 确认公开仓库为 `BrownieCoder/agent-lens`，默认分支为 `main`。
+- 确认首次 GitHub Actions CI 已成功完成。
+- README 增加真实 clone URL、CI、License 和 alpha release badges。
+- Changelog 固定 `0.1.0-alpha` 发布日期，并增加可直接用于 GitHub 的 release notes。
+- 增加求职作品集文案、面试 talking points、LinkedIn 发布草稿和 60 秒演示流程。
+
+### 进行中
+
+- 提交并推送 release metadata 更新。
+- 创建并推送 `v0.1.0-alpha` annotated tag。
+
+### 外部设置
+
+- GitHub About description/topics、Pre-release 和 branch protection 需要已登录的 GitHub 管理会话。

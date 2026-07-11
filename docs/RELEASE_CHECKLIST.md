@@ -2,7 +2,7 @@
 
 ## Repository
 
-- [ ] Replace placeholder repository URLs after publishing.
+- [x] Replace placeholder repository URLs after publishing.
 - [ ] Confirm MIT license owner and year.
 - [ ] Enable GitHub private vulnerability reporting.
 - [ ] Enable branch protection and require the CI workflow.

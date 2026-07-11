@@ -2,6 +2,10 @@
 
 > **Alpha** — a lightweight, self-hosted evaluation dashboard for report-generating LLM workflows.
 
+[![CI](https://github.com/BrownieCoder/agent-lens/actions/workflows/ci.yml/badge.svg)](https://github.com/BrownieCoder/agent-lens/actions/workflows/ci.yml)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
+[![Release: alpha](https://img.shields.io/badge/release-v0.1.0--alpha-orange.svg)](https://github.com/BrownieCoder/agent-lens/releases/tag/v0.1.0-alpha)
+
 Agent Lens answers a practical question: **did a Prompt or model change make the output better, or merely different?** It logs workflow runs, evaluates outputs with a consistent rubric, compares Prompt versions, tracks cost and latency, and preserves hard cases as a regression dataset.
 
 ![Agent Lens dashboard](docs/assets/dashboard.png)
@@ -34,7 +38,7 @@ The seed dataset intentionally makes `v2` more specific and risk-aware than `v1`
 Requirements: Python 3.11+, Node.js 20+, and `make`.
 
 ```bash
-git clone <your-public-repository-url>
+git clone https://github.com/BrownieCoder/agent-lens.git
 cd agent-lens
 make setup
 cp .env.example backend/.env
