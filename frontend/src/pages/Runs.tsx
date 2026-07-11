@@ -7,5 +7,5 @@ export function Runs() {
   const [runs, setRuns] = useState<Run[]>([]); const [query, setQuery] = useState(""); const [error, setError] = useState("");
   useEffect(() => { api.runs().then(setRuns).catch((e: Error) => setError(e.message)); }, []);
   const filtered = useMemo(() => runs.filter(run => `${run.id} ${run.workflow_name} ${run.source_type} ${run.prompt_version} ${run.model_name}`.toLowerCase().includes(query.toLowerCase())), [runs, query]);
-  return <><header className="page-head"><div><p className="eyebrow">Run explorer</p><h1>All workflow runs</h1><p>Inspect output quality and diagnose weak runs.</p></div><input className="search" placeholder="Filter runs…" value={query} onChange={e => setQuery(e.target.value)} /></header>{error ? <div className="notice error">{error}</div> : <section className="panel"><RunsTable runs={filtered} /></section>}</>;
+  return <><header className="page-head"><div><p className="eyebrow">Runs</p><h1>All runs</h1><p>Open a run to inspect its input, output, and latest evaluation.</p></div><input className="search" placeholder="Filter runs…" value={query} onChange={e => setQuery(e.target.value)} /></header>{error ? <div className="notice error">{error}</div> : <section className="panel"><RunsTable runs={filtered} /></section>}</>;
 }

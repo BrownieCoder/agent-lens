@@ -1,37 +1,38 @@
 # Agent Lens
 
-> **Alpha** — a lightweight, self-hosted evaluation dashboard for report-generating LLM workflows.
+[English](README.md) · [简体中文](README.zh-CN.md)
+
+> Early alpha. A small, self-hosted dashboard for evaluating report-generating LLM workflows.
 
 [![CI](https://github.com/BrownieCoder/agent-lens/actions/workflows/ci.yml/badge.svg)](https://github.com/BrownieCoder/agent-lens/actions/workflows/ci.yml)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
 [![Release: alpha](https://img.shields.io/badge/release-v0.1.0--alpha-orange.svg)](https://github.com/BrownieCoder/agent-lens/releases/tag/v0.1.0-alpha)
 
-Agent Lens answers a practical question: **did a Prompt or model change make the output better, or merely different?** It logs workflow runs, evaluates outputs with a consistent rubric, compares Prompt versions, tracks cost and latency, and preserves hard cases as a regression dataset.
+I built Agent Lens to answer a recurring question in my own workflow: after changing a prompt or model, did the report actually improve? The app records runs, scores them against a fixed rubric, and compares quality alongside cost, latency, and failures.
 
 ![Agent Lens dashboard](docs/assets/dashboard.png)
 
-## Why this project exists
+## Background
 
-General-purpose observability platforms are powerful, but many teams first need a smaller quality loop they can understand and own:
+The first version grew out of an `x-signal-agent` experiment that turns market signals into short research notes. Looking at traces was useful for debugging, but it did not help me decide whether one prompt produced better research than another. I wanted a local tool with a deliberately narrow loop:
 
 ```text
-LLM output → structured evaluation → comparison → decision → Prompt improvement
+output → evaluation → comparison → prompt change
 ```
 
-The initial workflow is an `x-signal-agent`-style financial research report. The data model and APIs are intentionally generic enough for document summarization, legal workflows, and internal AI tools.
+The sample data still reflects that original financial-research use case. The storage and API layers do not depend on it, so other report-style workflows can use the same run and evaluation model.
 
-## Highlights
+## What works today
 
-- **Eval-first workflow:** seven quality dimensions and six conservative risk flags.
-- **Provider choice:** deterministic offline Mock evaluator, strict-schema OpenAI evaluator, and JSON-mode DeepSeek evaluator.
-- **Evidence over vibes:** Prompt comparisons combine quality, cost, latency, volume, and failure rate.
-- **Regression-ready:** 12 seeded hard cases and paired `v1`/`v2` runs make improvement visible immediately.
-- **Small, readable stack:** FastAPI, SQLAlchemy, SQLite, React, TypeScript, and Recharts.
-- **Portfolio-grade engineering:** automated tests, CI, dependency audit, security boundaries, changelog, and release checklist.
+- Store workflow inputs, outputs, model metadata, token usage, cost, latency, and errors.
+- Score reports across seven dimensions and flag six common review risks.
+- Run evaluations offline with the deterministic mock evaluator, or use OpenAI and DeepSeek.
+- Compare prompt versions and keep difficult inputs as regression cases.
+- Export a Markdown evaluation summary for experiment notes.
 
 ## Demo
 
-The seed dataset intentionally makes `v2` more specific and risk-aware than `v1`. After startup, the dashboard shows the resulting score difference without requiring an external API key.
+`make seed` creates 24 runs against 12 paired cases. The `v1` outputs are intentionally vague; `v2` adds evidence, risks, and a next action. This makes the comparison screens useful immediately, without spending API credits.
 
 ## Quick start
 
@@ -61,8 +62,8 @@ The default is `mock`, so a fresh clone works without credentials.
 | Backend | Key required | Output contract | Intended use |
 |---|---|---|---|
 | `mock` | No | Deterministic Pydantic payload | Local demo, tests, offline development |
-| `openai` | `OPENAI_API_KEY` | Strict JSON Schema | Production-style LLM-as-judge experiments |
-| `deepseek` | `DEEPSEEK_API_KEY` | JSON mode + Pydantic validation | Lower-cost provider alternative |
+| `openai` | `OPENAI_API_KEY` | Strict JSON Schema | Hosted evaluator |
+| `deepseek` | `DEEPSEEK_API_KEY` | JSON mode + Pydantic validation | Hosted evaluator |
 
 Configure the default in `backend/.env`:
 
@@ -106,7 +107,7 @@ backend/app/
   services/     Evaluators, analytics, and Markdown export
   schemas/      Validated request and response contracts
 frontend/src/
-  pages/        Dashboard, runs, Prompt comparison, regression cases
+  pages/        Dashboard, runs, prompt comparison, regression cases
   components/   Score cards, charts, tables, evaluation breakdown
 ```
 
@@ -121,7 +122,7 @@ frontend/src/
 | GET | `/runs/{id}/evaluation` | Fetch the latest evaluation |
 | GET | `/dashboard/summary` | Aggregate KPI summary |
 | GET | `/dashboard/trends` | Daily quality, cost, and latency trends |
-| GET | `/dashboard/prompt-comparison` | Compare Prompt versions |
+| GET | `/dashboard/prompt-comparison` | Compare prompt versions |
 | GET | `/dashboard/ranked-runs` | Find best and worst runs |
 | POST/GET | `/regression-cases` | Create or list regression cases |
 | GET | `/regression-cases/{id}/runs` | Compare runs linked to one case |
@@ -133,7 +134,7 @@ frontend/src/
 make check
 ```
 
-This runs backend tests, Python compilation, the production frontend build, and the npm security audit. CI executes the same core checks on pushes and pull requests.
+This runs backend tests, Python compilation, the frontend build, and the npm audit. CI runs the same checks on pushes and pull requests.
 
 ## Current boundaries
 
@@ -150,12 +151,11 @@ LLM-as-judge output is a signal, not ground truth. Calibrate scoring against hum
 - OpenTelemetry trace ingestion
 - CI quality gates for Prompt regressions
 
-See [PLAN.md](PLAN.md) for implementation notes and optimization directions.
+See [PLAN.md](PLAN.md) for implementation notes and open questions.
 
-## Contributing and release status
+## Project notes
 
 - Contributions: [CONTRIBUTING.md](CONTRIBUTING.md)
 - Changelog: [CHANGELOG.md](CHANGELOG.md)
 - Release checklist: [docs/RELEASE_CHECKLIST.md](docs/RELEASE_CHECKLIST.md)
-- GitHub release setup: [docs/GITHUB_RELEASE_SETUP.md](docs/GITHUB_RELEASE_SETUP.md)
 - License: [MIT](LICENSE)

@@ -16,7 +16,7 @@ export function RegressionCases() {
     catch (e) { setError((e as Error).message); }
   };
   return <>
-    <header className="page-head"><div><p className="eyebrow">Regression dataset</p><h1>Known hard cases</h1><p>Reuse stable inputs to detect regressions across Prompt and model changes.</p></div></header>
+    <header className="page-head"><div><p className="eyebrow">Test set</p><h1>Regression cases</h1><p>Keep inputs that should be rerun after a prompt or model change.</p></div></header>
     <section className="regression-grid">
       <form className="panel case-form" onSubmit={submit}><h2>Add a case</h2>
         <label>Name<input required value={form.name} onChange={e=>setForm({...form,name:e.target.value})} /></label>
