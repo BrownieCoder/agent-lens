@@ -15,7 +15,7 @@
 | 5 | React Dashboard：汇总、运行列表、详情 | 已完成 |
 | 6 | 示例数据 Seed | 已完成 |
 | 7 | Markdown 评测报告 | 已完成 |
-| 8 | 真实 OpenAI evaluator | 已完成（待配置 Key 实跑） |
+| 8 | Hosted evaluator 集成 | 已完成 |
 | 9 | Prompt 对比与回归测试流程 | 已完成 |
 | 10 | README 与端到端验证 | 已完成 |
 | 11 | Public release hardening | 已完成 |
@@ -176,9 +176,9 @@
 
 - 增加模板定制、定时生成、PDF 和 Slack/邮件分发。
 
-## 8. 真实 OpenAI evaluator
+## 8. Hosted evaluator 集成
 
-**状态：已完成（待配置 Key 实跑）**
+**状态：已完成**
 
 ### 目标
 
@@ -196,7 +196,8 @@
 
 - 本地 OpenAI SDK 方法签名确认支持 `instructions`、`input`、`text` 和 Responses API 返回值。
 - 单元测试确认 JSON Schema 为 `additionalProperties: false` 且所有属性均 required。
-- 因仓库未配置 `OPENAI_API_KEY`，未产生真实付费 API 调用；配置 Key 后可直接实跑。
+- `make smoke-provider` 已使用合成输入完成 DeepSeek `deepseek-v4-flash` 真实调用；返回结果通过完整 Pydantic schema 校验。
+- OpenAI 路径已通过 strict JSON Schema contract test；真实 OpenAI 调用保留为可选验证。
 
 ### 可优化方向
 
@@ -278,7 +279,7 @@
 - `/health` 返回 `0.1.0-alpha`，Dashboard 和 404 页面浏览器冒烟测试通过，控制台 0 errors。
 - Starlette 测试客户端切换到 HTTPX2，测试输出无弃用警告。
 - 前端页面改为 route-level lazy loading；入口包降至约 236 kB，Dashboard 独立约 361 kB，消除大 chunk 警告。
-- 发布前仍需维护者使用自己的 OpenAI/DeepSeek Key 各执行一次真实付费 provider smoke test。
+- DeepSeek 真实 provider smoke test 已通过；OpenAI 真实调用为可选验证。
 
 ### 可优化方向
 
