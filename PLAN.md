@@ -258,7 +258,7 @@
 
 ### 目标
 
-- 将 MVP 整理为适合作品集展示和公开协作的 `v0.1.0-alpha`。
+- 将 MVP 整理为适合公开使用和协作的 `v0.1.0-alpha`。
 - 确保新用户可理解定位、快速运行、验证质量，并清楚知道安全边界。
 
 ### 已完成细节
@@ -282,12 +282,12 @@
 
 ### 可优化方向
 
-- 发布后增加录屏、在线 Demo、真实匿名案例和性能基准。
+- 发布后增加真实匿名案例和性能基准。
 - 增加 Alembic、认证、Postgres、OpenTelemetry 和 Prompt CI quality gate。
 
 ## 12. GitHub public release execution
 
-**状态：进行中**
+**状态：已完成**
 
 ### 已完成
 
@@ -295,14 +295,13 @@
 - 确认首次 GitHub Actions CI 已成功完成。
 - README 增加真实 clone URL、CI、License 和 alpha release badges。
 - Changelog 固定 `0.1.0-alpha` 发布日期，并增加可直接用于 GitHub 的 release notes。
-- 增加求职作品集文案、面试 talking points、LinkedIn 发布草稿和 60 秒演示流程。
-
-### 进行中
-
 - 提交并推送 release metadata 更新。
 - 创建并推送 `v0.1.0-alpha` annotated tag。
+- 配置 GitHub About description/topics、Pre-release 和 branch protection。
+- 启用 private vulnerability reporting，并要求 `backend`、`frontend` CI checks。
 
-### 外部设置
+### 验证
 
-- GitHub About description/topics、Pre-release 和 branch protection 需要已登录的 GitHub 管理会话。
-- 已增加幂等发布脚本与管理员设置指南，登录 `gh` 后可一次完成 push、About/topics 和 Pre-release。
+- `v0.1.0-alpha` annotated tag 与 GitHub Pre-release 已公开。
+- `main` 要求通过 pull request 合并，且 `backend`、`frontend` checks 必须成功并基于最新分支。
+- 禁止 force push 和删除 `main`，private vulnerability reporting 已启用。
