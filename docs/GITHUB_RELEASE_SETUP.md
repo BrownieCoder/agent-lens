@@ -33,7 +33,7 @@ Use branch name pattern `main` and enable:
 - Select both CI checks: `backend` and `frontend`.
 - Do not allow bypassing the above settings.
 
-For a solo portfolio repository, requiring one approving review can make routine maintenance awkward. Leave the approval count at zero initially, but keep pull requests and CI required.
+For a repository with a single maintainer, requiring one approving review can make routine maintenance awkward. Leave the approval count at zero initially, but keep pull requests and CI required.
 
 ## Repository profile
 
@@ -44,7 +44,3 @@ Confirm the About panel contains:
 - License: MIT.
 
 Enable private vulnerability reporting under `Settings → Security → Code security and analysis`.
-
-## Portfolio visibility
-
-Pin `agent-lens` on the GitHub profile and use `docs/PORTFOLIO.md` for resume, interview, launch-post, and demo copy.

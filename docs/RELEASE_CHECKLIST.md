@@ -3,10 +3,11 @@
 ## Repository
 
 - [x] Replace placeholder repository URLs after publishing.
-- [ ] Confirm MIT license owner and year.
-- [ ] Enable GitHub private vulnerability reporting.
-- [ ] Enable branch protection and require the CI workflow.
-- [ ] Add repository description, topics, and social preview.
+- [x] Confirm MIT license owner and year (`Wayne Zheng`, 2026).
+- [x] Enable GitHub private vulnerability reporting.
+- [x] Enable branch protection and require the CI workflow.
+- [x] Add repository description and topics.
+- [ ] Add a repository social preview image.
 
 ## Quality
 
@@ -18,10 +19,10 @@
 
 ## Release
 
-- [ ] Move `0.1.0-alpha` changelog entry from Unreleased to the release date.
-- [ ] Create tag `v0.1.0-alpha` from `main`.
-- [ ] Create a GitHub pre-release using the changelog notes.
-- [ ] Verify installation instructions from the public repository.
-- [ ] Share only anonymized screenshots and example data.
+- [x] Move `0.1.0-alpha` changelog entry from Unreleased to the release date.
+- [x] Create tag `v0.1.0-alpha` from `main`.
+- [x] Create a GitHub pre-release using the changelog notes.
+- [x] Verify `make setup`, `make seed`, and `make check` from a fresh public clone.
+- [x] Share only synthetic screenshots and example data.
 
 Authenticated repository setup is documented in [GITHUB_RELEASE_SETUP.md](GITHUB_RELEASE_SETUP.md).
