@@ -7,7 +7,7 @@
 - [x] Enable GitHub private vulnerability reporting.
 - [x] Enable branch protection and require the CI workflow.
 - [x] Add repository description and topics.
-- [ ] Add a repository social preview image.
+- [ ] Upload `docs/assets/social-preview.png` as the repository social preview.
 
 ## Quality
 
