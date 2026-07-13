@@ -41,6 +41,10 @@ Confirm the About panel contains:
 
 - Description: `Eval-first observability dashboard for report-generating LLM workflows.`
 - Topics: `agentops`, `deepseek`, `fastapi`, `llm-evaluation`, `llm-observability`, `openai`, `prompt-engineering`, `react`.
+
+## Social preview
+
+Upload `docs/assets/social-preview.png` under **Settings → General → Social preview**. The source SVG is kept beside the PNG so the image can be updated without regenerating text or layout by hand.
 - License: MIT.
 
 Enable private vulnerability reporting under `Settings → Security → Code security and analysis`.
