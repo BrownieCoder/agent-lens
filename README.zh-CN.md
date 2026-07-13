@@ -83,6 +83,15 @@ curl -X POST http://localhost:8000/runs/1/evaluate \
 
 调用托管模型会产生相应费用。模型返回的 JSON 必须通过校验后才会写入数据库；无效或空响应会返回 HTTP `502`。
 
+如需使用合成输入发起一次真实调用，同时避免启动应用或写入数据库：
+
+```bash
+make smoke-provider                   # DeepSeek
+make smoke-provider PROVIDER=openai   # OpenAI
+```
+
+该命令从 `backend/.env` 读取对应的 key，只输出 provider、模型、评分、人工复核标记和 schema 状态。Provider 响应无效时会以非零状态退出。
+
 ## 架构
 
 ```mermaid

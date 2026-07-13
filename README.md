@@ -83,6 +83,15 @@ curl -X POST http://localhost:8000/runs/1/evaluate \
 
 Provider calls incur provider charges. Model-produced JSON is always validated before persistence; malformed or empty provider output returns HTTP `502` instead of being stored.
 
+To make one real provider request with synthetic input, without starting the app or writing to its database:
+
+```bash
+make smoke-provider                   # DeepSeek
+make smoke-provider PROVIDER=openai   # OpenAI
+```
+
+The command reads the corresponding key from `backend/.env`, prints only the provider, model, score, review flag, and schema status, and exits non-zero if the provider response is invalid.
+
 ## Architecture
 
 ```mermaid

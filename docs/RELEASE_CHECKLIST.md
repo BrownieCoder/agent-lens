@@ -15,7 +15,8 @@
 - [x] `make seed` creates 12 cases and 24 paired runs in an isolated database.
 - [x] Dashboard, run detail, Prompt comparison, regression, and 404 pages pass browser smoke tests.
 - [x] Mock evaluator works without credentials.
-- [ ] OpenAI and DeepSeek provider calls are tested with the maintainer's own credentials.
+- [ ] Run `make smoke-provider` with a real DeepSeek key.
+- [ ] Optionally run `make smoke-provider PROVIDER=openai` with a real OpenAI key.
 
 ## Release
 
