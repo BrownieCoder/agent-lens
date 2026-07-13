@@ -7,7 +7,7 @@
 - [x] Enable GitHub private vulnerability reporting.
 - [x] Enable branch protection and require the CI workflow.
 - [x] Add repository description and topics.
-- [ ] Upload `docs/assets/social-preview.png` as the repository social preview.
+- [x] Upload `docs/assets/social-preview.png` as the repository social preview.
 
 ## Quality
 
@@ -15,8 +15,8 @@
 - [x] `make seed` creates 12 cases and 24 paired runs in an isolated database.
 - [x] Dashboard, run detail, Prompt comparison, regression, and 404 pages pass browser smoke tests.
 - [x] Mock evaluator works without credentials.
-- [ ] Run `make smoke-provider` with a real DeepSeek key.
-- [ ] Optionally run `make smoke-provider PROVIDER=openai` with a real OpenAI key.
+- [x] Run `make smoke-provider` with a real DeepSeek key.
+- Optional follow-up: run `make smoke-provider PROVIDER=openai` with a real OpenAI key.
 
 ## Release
 
