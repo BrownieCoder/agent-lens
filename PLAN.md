@@ -311,7 +311,7 @@
 
 ## 13. Human Review 与 evaluator calibration
 
-**状态：验收通过，待合并**
+**状态：已完成**
 
 ### 目标
 
@@ -346,3 +346,4 @@
 - 前端 TypeScript 与 Vite production build 已通过。
 - 浏览器盲评主流程、Blind review queue、Calibration 及 320/375px 响应式验收通过。
 - 独立复审最终得分：后端 `94/100`、QA `94/100`、前端 `93/100`，全部超过 90 分且无 P0。
+- GitHub PR `#6` 的 backend/frontend checks 全部通过，已合并到 `main`（merge commit `1e857a3`）。
