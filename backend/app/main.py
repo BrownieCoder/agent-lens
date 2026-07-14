@@ -35,10 +35,11 @@ def health() -> dict[str, str]:
     return {"status": "ok", "version": __version__}
 
 
-from .routers import dashboard, evaluations, regression, reports, runs  # noqa: E402
+from .routers import dashboard, evaluations, human_reviews, regression, reports, runs  # noqa: E402
 
 app.include_router(runs.router)
 app.include_router(evaluations.router)
+app.include_router(human_reviews.router)
 app.include_router(dashboard.router)
 app.include_router(regression.router)
 app.include_router(reports.router)

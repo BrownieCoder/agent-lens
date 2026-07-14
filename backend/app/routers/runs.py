@@ -44,7 +44,9 @@ def list_runs(
 @router.get("/{run_id}", response_model=RunRead)
 def get_run(run_id: int, db: Session = Depends(get_db)) -> WorkflowRun:
     run = db.scalar(
-        select(WorkflowRun).where(WorkflowRun.id == run_id).options(selectinload(WorkflowRun.evaluations))
+        select(WorkflowRun)
+        .where(WorkflowRun.id == run_id)
+        .options(selectinload(WorkflowRun.evaluations))
     )
     if not run:
         raise HTTPException(status_code=404, detail="Run not found")

@@ -19,6 +19,8 @@
 | 9 | Prompt 对比与回归测试流程 | 已完成 |
 | 10 | README 与端到端验证 | 已完成 |
 | 11 | Public release hardening | 已完成 |
+| 12 | GitHub public release execution | 已完成 |
+| 13 | Human Review 与 evaluator calibration | 进行中 |
 
 ## 1. 建立 MVP 实施计划
 
@@ -306,3 +308,41 @@
 - `v0.1.0-alpha` annotated tag 与 GitHub Pre-release 已公开。
 - `main` 要求通过 pull request 合并，且 `backend`、`frontend` checks 必须成功并基于最新分支。
 - 禁止 force push 和删除 `main`，private vulnerability reporting 已启用。
+
+## 13. Human Review 与 evaluator calibration
+
+**状态：验收通过，待合并**
+
+### 目标
+
+- 让人工评分绑定具体 `evaluation_id`，避免 evaluator 重跑后历史校准漂移。
+- 用 blind-first 流程减少模型分数对人工判断的锚定影响。
+- 量化 evaluator 与人工共识之间的误差、系统性偏差、一致率和高风险分歧。
+
+### 实现范围
+
+- HumanReview 保存七个评分维度、review decision、rubric version、notes 和时间信息。
+- 同一 reviewer 对同一 evaluation 只能保留一条评审，可显式更新但不静默新增重复样本。
+- 多 reviewer 先逐维求人工共识，再让每个 evaluation 只进入一次校准汇总。
+- Calibration 展示 MAE、RMSE、signed bias、agreement、large disagreement、correlation 和危险样本。
+- Calibration 按 evaluator model 与 rubric version 隔离；evaluation 与 run coverage 分别命名。
+- Run Detail 首次人工评分前隐藏模型分数，保存后显示 Human vs Model 差值并完成 decision。
+- 独立 Blind review queue 不返回或展示 evaluator 分数、flags、排名，也不按模型判断排序。
+- 模型分揭示后修改人工评分会记录 provenance、重置 decision，并保留历史 evaluation review。
+
+### 验收门槛
+
+采用 100 分独立 QA rubric，总分必须不低于 90，且以下硬门槛必须全部通过：
+
+1. 人工评审精确绑定 `evaluation_id`，重跑 evaluator 后不漂移。
+2. Golden fixture 对 consensus、MAE、bias、agreement 和分歧阈值的手算结果逐项一致。
+3. 浏览器可完成 blind review、decision、编辑和 calibration 下钻流程。
+4. 既有纵向 API、后端 tests、前端 production build 和依赖审计无回归。
+5. 不记录 API key、provider 原始响应或真实个人身份，并继续明确 trusted-network 边界。
+
+### 当前验证
+
+- 后端 golden fixture 已覆盖正负 bias、0.5 边界、pending 分母、非整数评分、七个维度、危险样本截断和旧 SQLite 表数据迁移；当前共 `23 passed`。
+- 前端 TypeScript 与 Vite production build 已通过。
+- 浏览器盲评主流程、Blind review queue、Calibration 及 320/375px 响应式验收通过。
+- 独立复审最终得分：后端 `94/100`、QA `94/100`、前端 `93/100`，全部超过 90 分且无 P0。

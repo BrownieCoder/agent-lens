@@ -3,11 +3,13 @@ import { NavLink, Route, Routes } from "react-router-dom";
 
 const Dashboard = lazy(() => import("./pages/Dashboard").then(module => ({ default: module.Dashboard })));
 const Runs = lazy(() => import("./pages/Runs").then(module => ({ default: module.Runs })));
+const ReviewQueue = lazy(() => import("./pages/ReviewQueue").then(module => ({ default: module.ReviewQueue })));
 const RunDetail = lazy(() => import("./pages/RunDetail").then(module => ({ default: module.RunDetail })));
 const PromptComparison = lazy(() => import("./pages/PromptComparison").then(module => ({ default: module.PromptComparison })));
 const RegressionCases = lazy(() => import("./pages/RegressionCases").then(module => ({ default: module.RegressionCases })));
+const Calibration = lazy(() => import("./pages/Calibration").then(module => ({ default: module.Calibration })));
 const NotFound = lazy(() => import("./pages/NotFound").then(module => ({ default: module.NotFound })));
 
 export default function App() {
-  return <div className="app-shell"><aside><div className="brand"><span>AL</span><div><strong>Agent Lens <em>Alpha</em></strong><small>Run evaluation</small></div></div><nav><NavLink to="/" end>Overview</NavLink><NavLink to="/runs">Runs</NavLink><NavLink to="/prompts">Prompt comparison</NavLink><NavLink to="/regression">Regression cases</NavLink></nav><p className="aside-note">Local evaluation workspace<br />v0.1.0-alpha</p></aside><main><Suspense fallback={<div className="notice">Loading…</div>}><Routes><Route path="/" element={<Dashboard />} /><Route path="/runs" element={<Runs />} /><Route path="/runs/:id" element={<RunDetail />} /><Route path="/prompts" element={<PromptComparison />} /><Route path="/regression" element={<RegressionCases />} /><Route path="*" element={<NotFound />} /></Routes></Suspense></main></div>;
+  return <div className="app-shell"><aside><div className="brand"><span>AL</span><div><strong>Agent Lens <em>Alpha</em></strong><small>Run evaluation</small></div></div><nav><NavLink to="/" end>Overview</NavLink><NavLink to="/review-queue">Blind review</NavLink><NavLink to="/runs">Runs</NavLink><NavLink to="/prompts">Prompt comparison</NavLink><NavLink to="/regression">Regression cases</NavLink><NavLink to="/calibration">Calibration</NavLink></nav><p className="aside-note">Local evaluation workspace<br />v0.1.0-alpha</p></aside><main><Suspense fallback={<div className="notice">Loading…</div>}><Routes><Route path="/" element={<Dashboard />} /><Route path="/review-queue" element={<ReviewQueue />} /><Route path="/runs" element={<Runs />} /><Route path="/runs/:id" element={<RunDetail />} /><Route path="/prompts" element={<PromptComparison />} /><Route path="/regression" element={<RegressionCases />} /><Route path="/calibration" element={<Calibration />} /><Route path="*" element={<NotFound />} /></Routes></Suspense></main></div>;
 }

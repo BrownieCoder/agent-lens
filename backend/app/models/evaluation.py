@@ -7,6 +7,7 @@ from sqlalchemy.orm import Mapped, mapped_column, relationship
 from ..db import Base
 
 if TYPE_CHECKING:
+    from .human_review import HumanReview
     from .run import WorkflowRun
 
 
@@ -36,3 +37,6 @@ class Evaluation(Base):
     )
 
     run: Mapped["WorkflowRun"] = relationship(back_populates="evaluations")
+    human_reviews: Mapped[list["HumanReview"]] = relationship(
+        back_populates="evaluation", cascade="all, delete-orphan"
+    )
