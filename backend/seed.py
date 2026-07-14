@@ -3,6 +3,7 @@ from datetime import datetime, timedelta, timezone
 
 from app.db import SessionLocal, init_db
 from app.models.evaluation import Evaluation
+from app.models.human_review import HumanReview
 from app.models.regression_case import RegressionCase
 from app.models.run import WorkflowRun
 from app.services.evaluator import MockEvaluator
@@ -78,14 +79,38 @@ def main() -> None:
             db.add(run)
             db.flush()
             result = evaluator.evaluate(run)
-            db.add(Evaluation(
+            evaluation = Evaluation(
                 run_id=run.id,
                 evaluator_type=result.evaluator_type,
                 evaluator_model=result.evaluator_model,
                 **result.payload.model_dump(),
-            ))
+            )
+            db.add(evaluation)
+            db.flush()
+            if index in (0, 1, 2, 4, 12, 13, 14, 15):
+                delta = 0.4 if version == "v1" else 0.2
+                human_scores = {
+                    name: round(max(1.0, min(5.0, getattr(result.payload, name) - delta)), 1)
+                    for name in (
+                        "clarity_score",
+                        "evidence_score",
+                        "risk_coverage_score",
+                        "specificity_score",
+                        "actionability_score",
+                        "novelty_score",
+                        "overall_score",
+                    )
+                }
+                db.add(HumanReview(
+                    evaluation_id=evaluation.id,
+                    reviewer="seed-reviewer",
+                    review_decision="adjust",
+                    rubric_version="research-report-v1",
+                    notes="Synthetic human-review fixture for the calibration demo.",
+                    **human_scores,
+                ))
         db.commit()
-        print("Created 12 regression cases and 24 paired sample runs with mock evaluations.")
+        print("Created 12 regression cases, 24 paired runs, and 8 synthetic human reviews.")
 
 
 if __name__ == "__main__":

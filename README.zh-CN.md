@@ -28,11 +28,12 @@
 - 从七个维度评估报告，并标记六类常见审查风险。
 - 使用确定性的 Mock evaluator 离线运行，或接入 OpenAI、DeepSeek。
 - 比较不同 prompt 版本，并把困难输入保存为回归测试用例。
+- 对具体 evaluator 结果进行盲评，并量化 judge 与人工评分的偏差。
 - 导出 Markdown 格式的评估摘要，便于记录实验结论。
 
 ## 示例数据
 
-`make seed` 会创建 24 次运行和 12 组配对用例。`v1` 输出被有意设计得较为模糊，`v2` 则加入证据、风险和下一步行动。因此，无需消耗 API 额度，启动后就能直接查看版本对比效果。
+`make seed` 会创建 24 次运行、12 组配对用例和 8 条合成人工评审。`v1` 输出被有意设计得较为模糊，`v2` 则加入证据、风险和下一步行动。因此，无需消耗 API 额度，启动后就能直接查看版本对比与校准效果。
 
 ## 快速开始
 
@@ -92,6 +93,23 @@ make smoke-provider PROVIDER=openai   # OpenAI
 
 该命令从 `backend/.env` 读取对应的 key，只输出 provider、模型、评分、人工复核标记和 schema 状态。Provider 响应无效时会以非零状态退出。
 
+## 人工评审与校准
+
+人工判断应从专用的 **Blind review** 队列开始。该入口不会显示 evaluator 分数、flags、排名或模型优先级排序；普通 Runs 和分析页面并不是盲评入口。进入 Run 页面后，Agent Lens 会继续在首次人工评分保存前隐藏模型分数，减少锚定偏差。评审绑定具体的 `evaluation_id`，因此重新运行 evaluator 不会悄悄改变历史校准配对。完成盲评后，可以对比人工分与模型分，并选择接受、调整或拒绝模型判断。
+
+Calibration 页面先对同一 evaluation 的多条人工评审取共识均值，再让该 evaluation 进入一次汇总，避免评审人数较多的样本获得额外权重。误差统一定义为 `模型分 − 人工分`，并展示：
+
+- MAE 和 RMSE：误差幅度。
+- Bias：正值表示 evaluator 系统性给分偏高。
+- Agreement：绝对分差不超过 0.5。
+- Large disagreement：绝对分差达到或超过 1.0。
+- Pearson correlation：至少有两组非恒定配对时计算。
+- 高风险样本：模型 overall 至少 4.0，但人工共识不高于 2.5。
+
+人工评分是校准证据，并不自动等同于 ground truth。
+
+校准结果始终限定在同一个 `evaluator_model` 与 `rubric_version` 中，不会混合不兼容的 judge 或评分标准。Evaluation coverage 表示当前模型 scope 中已评审 evaluation 占全部 evaluation 的比例。Acceptance rate 按 reviewer 计算：`agree / (agree + adjust + reject)`，不包含 pending。模型分揭示后如修改人工分数，decision 会重置为 pending，并记录该评分的修改来源。
+
 ## 架构
 
 ```mermaid
@@ -105,19 +123,20 @@ flowchart LR
     M --> D
     O --> D
     DS --> D
+    H["人工评审"] --> D
     D --> X["分析与报告"]
     X --> R["React 仪表盘"]
 ```
 
 ```text
 backend/app/
-  models/       运行、评估和回归用例实体
-  routers/      运行、评估、仪表盘、回归和报告 API
-  services/     Evaluator、分析和 Markdown 导出
+  models/       运行、评估、人工评审和回归用例实体
+  routers/      运行、评估、人工评审、仪表盘、回归和报告 API
+  services/     Evaluator、校准、分析和 Markdown 导出
   schemas/      请求与响应校验
 frontend/src/
-  pages/        仪表盘、运行记录、prompt 对比、回归用例
-  components/   评分卡、图表、表格、评估详情
+  pages/        仪表盘、运行记录、prompt 对比、回归用例、校准
+  components/   评分卡、图表、表格、评估与人工评审面板
 ```
 
 ## API 概览
@@ -129,10 +148,15 @@ frontend/src/
 | GET | `/runs/{id}` | 查看运行及其评估结果 |
 | POST | `/runs/{id}/evaluate` | 运行 Mock、OpenAI 或 DeepSeek 评估 |
 | GET | `/runs/{id}/evaluation` | 获取最新评估 |
+| POST/GET | `/runs/{id}/human-reviews` | 创建或列出绑定到 evaluation 的人工评审 |
+| GET/PUT | `/human-reviews/{id}` | 读取或更新一条人工评审 |
+| GET | `/human-review-queue` | 列出等待人工评审的最新 evaluation |
 | GET | `/dashboard/summary` | 获取汇总指标 |
 | GET | `/dashboard/trends` | 获取每日质量、成本和延迟趋势 |
 | GET | `/dashboard/prompt-comparison` | 比较 prompt 版本 |
 | GET | `/dashboard/ranked-runs` | 查找最高分和最低分运行 |
+| GET | `/dashboard/calibration` | 对比 evaluator 与人工共识 |
+| GET | `/dashboard/calibration/scopes` | 列出 evaluator model 与 rubric 的可选 scope |
 | POST/GET | `/regression-cases` | 创建或列出回归用例 |
 | GET | `/regression-cases/{id}/runs` | 比较同一用例关联的运行 |
 | POST | `/reports/evaluation-summary` | 导出 Markdown 摘要 |
@@ -147,13 +171,12 @@ make check
 
 ## 当前边界
 
-此 Alpha 版本面向本地开发和可信网络，目前不包含身份验证、权限控制、多租户、脱敏、限流或数据库迁移。请勿直接将开发服务器暴露在公网，也不要在缺少必要安全措施时写入机密数据。详见 [SECURITY.md](SECURITY.md)。
+此 Alpha 版本面向本地开发和可信网络，目前不包含身份验证、权限控制、多租户、脱敏、限流或数据库迁移。Reviewer label 只是本地标识，不代表可信身份，评审 notes 也可能包含敏感上下文。请勿直接将开发服务器暴露在公网，也不要在缺少必要安全措施时写入机密数据。详见 [SECURITY.md](SECURITY.md)。
 
 LLM-as-judge 的结果只能作为辅助信号，不能替代人工结论。在高风险场景中使用前，应先通过人工标注校准评分。
 
 ## 后续计划
 
-- 人工审查与 evaluator 校准
 - 成对输出比较
 - 数据集和实验版本管理
 - Alembic 迁移与 Postgres 配置

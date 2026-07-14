@@ -1,4 +1,15 @@
-import type { PromptComparison, RegressionCase, Run, Summary, Trend } from "../types";
+import type {
+  CalibrationScope,
+  CalibrationSummary,
+  HumanReview,
+  HumanReviewDraft,
+  HumanReviewQueueItem,
+  PromptComparison,
+  RegressionCase,
+  Run,
+  Summary,
+  Trend,
+} from "../types";
 
 const API_BASE = import.meta.env.VITE_API_BASE ?? "/api";
 
@@ -19,7 +30,16 @@ export const api = {
   promptComparison: () => request<PromptComparison[]>("/dashboard/prompt-comparison"),
   runs: () => request<Run[]>("/runs?limit=100"),
   run: (id: string) => request<Run>(`/runs/${id}`),
+  humanReviews: (id: string | number) => request<HumanReview[]>(`/runs/${id}/human-reviews`),
+  humanReviewQueue: () => request<HumanReviewQueueItem[]>("/human-review-queue?unreviewed=true&limit=100"),
   rankedRuns: () => request<{best: Run[]; worst: Run[]}>("/dashboard/ranked-runs"),
+  calibrationScopes: () => request<CalibrationScope[]>("/dashboard/calibration/scopes"),
+  calibration: (evaluatorModel?: string, rubricVersion?: string) => {
+    const query = evaluatorModel && rubricVersion
+      ? `?evaluator_model=${encodeURIComponent(evaluatorModel)}&rubric_version=${encodeURIComponent(rubricVersion)}`
+      : "";
+    return request<CalibrationSummary>(`/dashboard/calibration${query}`);
+  },
   regressionCases: () => request<RegressionCase[]>("/regression-cases"),
   createRegressionCase: (payload: Pick<RegressionCase, "name" | "input_text" | "expected_focus" | "notes">) =>
     request<RegressionCase>("/regression-cases", {
@@ -31,5 +51,19 @@ export const api = {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({ evaluator_type: "mock" }),
+  }),
+  createHumanReview: (runId: number, payload: HumanReviewDraft) =>
+    request<HumanReview>(`/runs/${runId}/human-reviews`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(payload),
+    }),
+  updateHumanReview: (
+    reviewId: number,
+    payload: Omit<HumanReviewDraft, "evaluation_id">,
+  ) => request<HumanReview>(`/human-reviews/${reviewId}`, {
+    method: "PUT",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(payload),
   }),
 };
