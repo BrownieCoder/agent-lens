@@ -2,19 +2,41 @@
 
 [English](README.md) · [简体中文](README.zh-CN.md)
 
-> Early alpha. A small, self-hosted dashboard for evaluating report-generating LLM workflows.
+### Did the new prompt actually improve the report?
+
+A self-hosted evaluation dashboard for report-generating LLM workflows. Compare prompt versions, check model scores against human review, and see quality alongside cost, latency, and failures.
 
 [![CI](https://github.com/BrownieCoder/agent-lens/actions/workflows/ci.yml/badge.svg)](https://github.com/BrownieCoder/agent-lens/actions/workflows/ci.yml)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
 [![Release: alpha](https://img.shields.io/badge/release-v0.1.0--alpha-orange.svg)](https://github.com/BrownieCoder/agent-lens/releases/tag/v0.1.0-alpha)
 
-I built Agent Lens to answer a recurring question in my own workflow: after changing a prompt or model, did the report actually improve? The app records runs, scores them against a fixed rubric, and compares quality alongside cost, latency, and failures.
+**Python / FastAPI · React / TypeScript · SQLAlchemy / SQLite**
 
-![Agent Lens dashboard](docs/assets/dashboard.png)
+Early alpha. The local demo runs without API keys; hosted evaluators are optional.
+
+[Try the demo](#quick-start) · [Engineering highlights](#engineering-highlights) · [Architecture](#architecture) · [Deployment boundaries](#current-boundaries)
+
+## Engineering highlights
+
+| Design choice | Why it matters | Explore the implementation |
+|---|---|---|
+| Validated evaluator contracts | Mock, OpenAI, and DeepSeek outputs share one schema; invalid provider output is rejected before persistence. | [Evaluator service](backend/app/services/evaluator.py) · [API tests](backend/tests/test_api.py) |
+| Human review with provenance | Blind ratings reference an exact evaluation. Rerunning the judge cannot silently change the comparison. | [Review API](backend/app/routers/human_reviews.py) · [Review queue](frontend/src/pages/ReviewQueue.tsx) |
+| Calibration within a defined scope | Metrics use one evaluator model and rubric version, with one human consensus per evaluation. | [Calibration service](backend/app/services/calibration.py) |
+| Reproducible local experiments | Paired synthetic cases and a deterministic mock evaluator make the evaluation loop inspectable without paid API calls. | [Demo seed](backend/seed.py) · [Verification](#verification) |
+
+<details>
+<summary><strong>View the dashboard</strong> — synthetic demo data</summary>
+
+![Agent Lens dashboard with synthetic runs, prompt comparisons, and quality, cost, and latency charts](docs/assets/dashboard.png)
+
+The screenshot shows an earlier alpha dashboard. Its values are demo data, not production results or model benchmarks.
+
+</details>
 
 ## Background
 
-The first version grew out of an `x-signal-agent` experiment that turns market signals into short research notes. Looking at traces was useful for debugging, but it did not help me decide whether one prompt produced better research than another. I wanted a local tool with a deliberately narrow loop:
+I built Agent Lens while working on an `x-signal-agent` experiment that turns market signals into short research notes. Traces helped me debug execution; I also needed to judge the resulting report after changing a prompt or model. The app focuses on one loop:
 
 ```text
 output → evaluation → comparison → prompt change

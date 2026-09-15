@@ -6,7 +6,7 @@ Agent Lens is currently an alpha project. Security fixes are applied to the late
 
 ## Reporting a vulnerability
 
-Please do not open a public issue for a suspected vulnerability. Use GitHub's private vulnerability reporting feature after the repository is published.
+Please do not open a public issue for a suspected vulnerability. Use [GitHub's private vulnerability reporting form](https://github.com/BrownieCoder/agent-lens/security/advisories/new) to submit a confidential report.
 
 ## Alpha security boundaries
 
