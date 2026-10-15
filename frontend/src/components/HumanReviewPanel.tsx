@@ -1,6 +1,6 @@
 import { FormEvent, useMemo, useRef, useState } from "react";
 import { api } from "../api/client";
-import type { Evaluation, HumanReview, HumanReviewDraft } from "../types";
+import type { ReviewEvaluation, HumanReview, HumanReviewDraft } from "../types";
 
 const scoreFields = [
   ["clarity_score", "Clarity"], ["evidence_score", "Evidence"],
@@ -22,12 +22,12 @@ function emptyDraft(evaluationId: number): EditableDraft {
 
 function reviewDraft(review: HumanReview): EditableDraft {
   const { id: _id, run_id: _runId, created_at: _createdAt, updated_at: _updatedAt,
-    scores_edited_after_reveal: _edited, ...draft } = review;
+    scores_edited_after_reveal: _edited, original_scores: _original, ...draft } = review;
   return draft;
 }
 
 export function HumanReviewPanel({ runId, evaluation, existingReview, onSaved, onDirtyChange }: {
-  runId: number; evaluation?: Evaluation; existingReview?: HumanReview;
+  runId: number; evaluation?: ReviewEvaluation; existingReview?: HumanReview;
   onSaved: () => Promise<void>; onDirtyChange: (dirty: boolean) => void;
 }) {
   const [review, setReview] = useState(existingReview);
@@ -40,7 +40,7 @@ export function HumanReviewPanel({ runId, evaluation, existingReview, onSaved, o
   const decisionRef = useRef<HTMLSelectElement>(null);
   const notesRef = useRef<HTMLTextAreaElement>(null);
   const modelScores = useMemo(() => new Map<ScoreKey, number>(
-    evaluation ? scoreFields.map(([key]) => [key, evaluation[key]]) : [],
+    evaluation ? scoreFields.map(([key]) => [key, evaluation[key] ?? NaN]) : [],
   ), [evaluation]);
 
   const change = (values: Partial<EditableDraft>) => {
@@ -69,9 +69,9 @@ export function HumanReviewPanel({ runId, evaluation, existingReview, onSaved, o
       const saved = review
         ? await api.updateHumanReview(review.id, withoutEvaluationId(next))
         : await api.createHumanReview(runId, { ...next, evaluation_id: evaluation.id, review_decision: "pending" });
+      await onSaved();
       setReview(saved); setDraft(reviewDraft(saved)); setEditing(false); onDirtyChange(false);
       setMessage(changed ? "Scores updated. Choose a new decision." : "Blind scores saved. Model scores are now revealed.");
-      await onSaved();
     } catch (caught) { setError((caught as Error).message); }
     finally { setSaving(false); }
   };

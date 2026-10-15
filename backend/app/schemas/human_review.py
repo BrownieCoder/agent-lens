@@ -5,6 +5,7 @@ from pydantic import BaseModel, ConfigDict, Field, field_validator, model_valida
 
 
 class HumanReviewPayload(BaseModel):
+    model_config = ConfigDict(extra="forbid", strict=True, allow_inf_nan=False)
     reviewer: str = Field(default="local-reviewer", min_length=1, max_length=120)
     review_decision: Literal["pending", "agree", "adjust", "reject"] = "pending"
     rubric_version: str = Field(default="research-report-v1", min_length=1, max_length=80)
@@ -51,6 +52,7 @@ class HumanReviewRead(HumanReviewPayload):
     id: int
     run_id: int
     evaluation_id: int
+    original_scores: dict[str, float] | None = None
     scores_edited_after_reveal: bool
     created_at: datetime
     updated_at: datetime
@@ -96,6 +98,8 @@ class CalibrationDisagreement(BaseModel):
 
 
 class CalibrationSummary(BaseModel):
+    population_note: str = ""
+    judge_rubric_version: str = "research-report-v1"
     evaluator_model: str | None
     rubric_version: str | None
     review_count: int
@@ -121,6 +125,7 @@ class CalibrationSummary(BaseModel):
 
 
 class CalibrationScope(BaseModel):
+    judge_rubric_version: str = "research-report-v1"
     evaluator_model: str
     rubric_version: str
     review_count: int

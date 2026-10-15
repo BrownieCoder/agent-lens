@@ -1,10 +1,14 @@
 from contextlib import asynccontextmanager
 
-from fastapi import FastAPI
+from fastapi import Depends, FastAPI, HTTPException
+from sqlalchemy import text
+from sqlalchemy.exc import SQLAlchemyError
+from sqlalchemy.orm import Session
 from fastapi.middleware.cors import CORSMiddleware
 
 from .config import get_settings
-from .db import init_db
+from .db import get_db, init_db
+from .security import LocalRequestBoundary
 from .version import __version__
 
 
@@ -29,9 +33,15 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
+app.add_middleware(LocalRequestBoundary, allowed_origins=settings.cors_origin_list + ["http://localhost:8000", "http://127.0.0.1:8000"])
+
 
 @app.get("/health", tags=["system"])
-def health() -> dict[str, str]:
+def health(db: Session = Depends(get_db)) -> dict[str, str]:
+    try:
+        db.execute(text("SELECT 1"))
+    except SQLAlchemyError as exc:
+        raise HTTPException(status_code=503, detail="Database unavailable") from exc
     return {"status": "ok", "version": __version__}
 
 

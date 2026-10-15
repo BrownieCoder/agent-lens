@@ -1,9 +1,9 @@
 from datetime import datetime, timezone
 
-from sqlalchemy import DateTime, String, Text
+from sqlalchemy import String, Text
 from sqlalchemy.orm import Mapped, mapped_column
 
-from ..db import Base
+from ..db import Base, UTCDateTime
 
 
 class RegressionCase(Base):
@@ -15,5 +15,5 @@ class RegressionCase(Base):
     expected_focus: Mapped[str] = mapped_column(Text)
     notes: Mapped[str | None] = mapped_column(Text, nullable=True)
     created_at: Mapped[datetime] = mapped_column(
-        DateTime(timezone=True), default=lambda: datetime.now(timezone.utc), index=True
+        UTCDateTime(), default=lambda: datetime.now(timezone.utc), index=True
     )

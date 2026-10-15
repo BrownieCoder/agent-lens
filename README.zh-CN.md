@@ -79,7 +79,7 @@ DEEPSEEK_EVALUATOR_MODEL=deepseek-v4-flash
 ```bash
 curl -X POST http://localhost:8000/runs/1/evaluate \
   -H 'Content-Type: application/json' \
-  -d '{"evaluator_type":"deepseek"}'
+  -d '{"evaluator_type":"deepseek","request_id":"replace-with-a-new-unique-request-id"}'
 ```
 
 调用托管模型会产生相应费用。模型返回的 JSON 必须通过校验后才会写入数据库；无效或空响应会返回 HTTP `502`。
@@ -95,7 +95,7 @@ make smoke-provider PROVIDER=openai   # OpenAI
 
 ## 人工评审与校准
 
-人工判断应从专用的 **Blind review** 队列开始。该入口不会显示 evaluator 分数、flags、排名或模型优先级排序；普通 Runs 和分析页面并不是盲评入口。进入 Run 页面后，Agent Lens 会继续在首次人工评分保存前隐藏模型分数，减少锚定偏差。评审绑定具体的 `evaluation_id`，因此重新运行 evaluator 不会悄悄改变历史校准配对。完成盲评后，可以对比人工分与模型分，并选择接受、调整或拒绝模型判断。
+人工判断应从专用的 **Blind review** 队列开始。该入口不会显示 evaluator 分数、flags、排名或模型优先级排序；普通 Runs 和分析页面并不是盲评入口。进入 Run 页面后，先获取不含 judge 分数/flags 的详情，并把确切 evaluation ID 固定在 URL；有本地人评后才读取完整模型分。这是展示层盲评，不是权限隔离，普通分析 API 仍可访问。评审绑定具体的 `evaluation_id`，因此重新运行 evaluator 不会悄悄改变历史校准配对。完成盲评后，可以对比人工分与模型分，并选择接受、调整或拒绝模型判断。
 
 Calibration 页面先对同一 evaluation 的多条人工评审取共识均值，再让该 evaluation 进入一次汇总，避免评审人数较多的样本获得额外权重。误差统一定义为 `模型分 − 人工分`，并展示：
 
@@ -108,7 +108,7 @@ Calibration 页面先对同一 evaluation 的多条人工评审取共识均值�
 
 人工评分是校准证据，并不自动等同于 ground truth。
 
-校准结果始终限定在同一个 `evaluator_model` 与 `rubric_version` 中，不会混合不兼容的 judge 或评分标准。Evaluation coverage 表示当前模型 scope 中已评审 evaluation 占全部 evaluation 的比例。Acceptance rate 按 reviewer 计算：`agree / (agree + adjust + reject)`，不包含 pending。模型分揭示后如修改人工分数，decision 会重置为 pending，并记录该评分的修改来源。
+校准结果始终限定在同一个 `evaluator_model`、judge rubric 与人工 `rubric_version` 中，不会混合不兼容的 judge 或评分标准。Evaluation coverage 表示当前模型 scope 中已评审 evaluation 占全部 evaluation 的比例。Acceptance rate 按 reviewer 计算：`agree / (agree + adjust + reject)`，不包含 pending。模型分揭示后如修改人工分数，decision 会重置为 pending，保留原始分数快照，并将揭晓后改分的评审排除出独立盲评校准；旧数据中无法恢复的初始分数保持未知。Reviewer 和人工 rubric 身份不能通过编辑重新指定。
 
 ## 架构
 
@@ -171,7 +171,7 @@ make check
 
 ## 当前边界
 
-此 Alpha 版本面向本地开发和可信网络，目前不包含身份验证、权限控制、多租户、脱敏、限流或数据库迁移。Reviewer label 只是本地标识，不代表可信身份，评审 notes 也可能包含敏感上下文。请勿直接将开发服务器暴露在公网，也不要在缺少必要安全措施时写入机密数据。详见 [SECURITY.md](SECURITY.md)。
+此候选面向单人操作、macOS/Linux、回环地址、单后端进程和本地 SQLite，只用于非敏感数据。不能直接共享到局域网或公网；远程使用必须经过认证的 SSH 本地端口转发。没有应用身份验证、权限隔离、多租户、自动脱敏、限流、静态加密或审计日志。Host/Origin 与请求体限制不是认证。支持的 Alpha schema 在启动时事务升级；不承诺通用 Alembic 迁移或自动降级。Reviewer label 只是未经验证的本地标签。安装、停止、备份、升级与回滚见 [操作手册](docs/OPERATIONS.md)，安全边界见 [SECURITY.md](SECURITY.md)。
 
 LLM-as-judge 的结果只能作为辅助信号，不能替代人工结论。在高风险场景中使用前，应先通过人工标注校准评分。
 
@@ -191,3 +191,14 @@ LLM-as-judge 的结果只能作为辅助信号，不能替代人工结论。在�
 - 更新记录：[CHANGELOG.md](CHANGELOG.md)
 - 发布检查：[docs/RELEASE_CHECKLIST.md](docs/RELEASE_CHECKLIST.md)
 - 开源协议：[MIT](LICENSE)
+
+## 候选版本的测量和交付边界
+
+- `make setup` 使用 Python 全量版本锁和 npm lock；Python 3.11+、Node.js 20+，默认无需 API key。`make dev` 明确绑定 127.0.0.1，Ctrl-C 停止两个服务；不要把 Vite preview 当成完整应用部署。
+- Hosted judge 的六维与 overall 均为有限 1–5 分，overall 是独立整体判断，不是自动加权和。Mock 是六维启发式均值减通用文本惩罚；两者不能当作已验证 benchmark。风险 flags 是独立警示，evidence 分不保证外部事实真实。
+- Prompt 对比是观察性分组，展示匹配/未配对输入、重复运行、不同工作流/生成模型/judge 和缺失来源。匹配本身不能消除混杂，更不能证明因果改善。质量采用每个 run 最新评估；失败运行进入失败分母，有分数的失败样本也进入质量均值。
+- 成本是调用方上报的 USD 生成估值，token 和延迟也是调用方测量，均不包含 judge/重试开销。缺失值为未知，均值只使用已知值并显示数量；迁移旧数据会标记来源未经核验，旧零改为未知并退出均值，原值保留在来源字段中；历史非零估值继续纳入。Seed/mock 金额是合成示例，不是账单。
+- Overview 应用 UTC 日期后，可导出同范围 Markdown；导出使用已应用范围。Runs 使用全库搜索与分页，盲评队列也支持分页。
+- Provider 超时 60 秒、SDK 自动重试为零、输出上限 2,000 token。同一次请求重试保留 `request_id`，明确重新评估才用新 ID；失败或中断可能已计费，先查看安全 attempt 状态。
+- 可记录 prompt 模板 hash、生成参数、dataset/experiment 名称；缺失元数据不会被伪装为完整复现实验。固定探索/保留数据及待执行人工步骤见 [实验说明](docs/EXPERIMENT.md)。
+- 软件交付、真实 provider 连通性、真实人工评审效果是三个独立结论。离线测试及合成评分不能证明后两项。当前验收按 [冻结合同](docs/ACCEPTANCE_CONTRACT.md) 和 [双独立审查流程](docs/DELIVERY_WORKFLOW.md) 执行；历史绿灯不等于本轮通过。

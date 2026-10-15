@@ -4,6 +4,15 @@ All notable changes to Agent Lens are documented here. The project follows Seman
 
 ## Unreleased
 
+### Candidate integrity and delivery
+
+- Atomic SQLite upgrades and rollback checks; safe snapshot/restore tooling and loopback-only operation instructions.
+- Strict evaluator payloads, bounded calls, retry identity and safe attempt failures; version and provenance metadata.
+- Score-free blind detail, exact evaluation navigation and exclusion of post-reveal edits from blind calibration.
+- Nullable usage metrics, population/matching disclosures and shared UTC filters; paginated run search and browser Markdown export.
+- Transitive Python dependency lock, patched source-map dependency and independent acceptance fixtures.
+- Frozen delivery contract and manual fresh-review protocol; no candidate approval or live provider effectiveness is implied by this changelog.
+
 ### Added
 
 - Blind-first human ratings bound to exact evaluator results.

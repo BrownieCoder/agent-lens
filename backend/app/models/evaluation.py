@@ -1,10 +1,10 @@
 from datetime import datetime, timezone
 from typing import TYPE_CHECKING
 
-from sqlalchemy import Boolean, DateTime, Float, ForeignKey, String, Text
+from sqlalchemy import Boolean, Float, ForeignKey, String, Text
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
-from ..db import Base
+from ..db import Base, UTCDateTime
 
 if TYPE_CHECKING:
     from .human_review import HumanReview
@@ -18,6 +18,8 @@ class Evaluation(Base):
     run_id: Mapped[int] = mapped_column(ForeignKey("workflow_runs.id"), index=True)
     evaluator_type: Mapped[str] = mapped_column(String(40), default="mock")
     evaluator_model: Mapped[str] = mapped_column(String(120), default="mock-v1")
+    rubric_version: Mapped[str] = mapped_column(String(80), default="research-report-v1")
+    request_id: Mapped[str | None] = mapped_column(String(160), unique=True, nullable=True)
     clarity_score: Mapped[float] = mapped_column(Float)
     evidence_score: Mapped[float] = mapped_column(Float)
     risk_coverage_score: Mapped[float] = mapped_column(Float)
@@ -33,7 +35,7 @@ class Evaluation(Base):
     needs_human_review: Mapped[bool] = mapped_column(Boolean, default=False)
     comments: Mapped[str] = mapped_column(Text, default="")
     created_at: Mapped[datetime] = mapped_column(
-        DateTime(timezone=True), default=lambda: datetime.now(timezone.utc), index=True
+        UTCDateTime(), default=lambda: datetime.now(timezone.utc), index=True
     )
 
     run: Mapped["WorkflowRun"] = relationship(back_populates="evaluations")

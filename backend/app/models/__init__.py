@@ -1,3 +1,4 @@
+from .evaluation_attempt import EvaluationAttempt
 from .evaluation import Evaluation
 from .human_review import HumanReview
 from .regression_case import RegressionCase

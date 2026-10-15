@@ -15,7 +15,7 @@ export function RunsTable({ runs, compact = false }: { runs: Run[]; compact?: bo
                 <td><span className="tag">{run.prompt_version}</span></td>
                 <td>{run.model_name}</td>
                 <td><strong>{evaluation?.overall_score?.toFixed(1) ?? "—"}</strong></td>
-                {!compact && <><td>${run.estimated_cost.toFixed(4)}</td><td>{run.latency_ms} ms</td></>}
+                {!compact && <><td>{run.estimated_cost == null ? "Unknown" : `$${run.estimated_cost.toFixed(4)}`}</td><td>{run.latency_ms == null ? "Unknown" : `${run.latency_ms} ms`}</td></>}
                 <td><span className={`status ${run.status}`}>{run.status}</span></td>
               </tr>
             );
