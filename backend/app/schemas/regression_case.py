@@ -18,8 +18,13 @@ class RegressionCaseCreate(BaseModel):
         return value.strip() if info.field_name == "name" else value
 
 
-class RegressionCaseRead(RegressionCaseCreate):
+class RegressionCaseRead(BaseModel):
+    """Keep legacy text intact; current create validation applies only to writes."""
     model_config = ConfigDict(from_attributes=True)
 
+    name: str
+    input_text: str
+    expected_focus: str
+    notes: str | None = None
     id: int
     created_at: datetime

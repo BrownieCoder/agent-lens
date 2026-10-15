@@ -44,10 +44,17 @@ def _runs(db, date_from, date_to):
 
 def _metrics(runs):
     evaluations = [max(run.evaluations, key=lambda ev: ev.id) for run in runs if run.evaluations]
+    # Modern successful attempts already represent their linked evaluation.
+    # Legacy successes lack those rows; add only evaluations not represented by
+    # an attempt, so new failures/pending requests cannot hide historical work.
+    attempt_count = 0
+    for run in runs:
+        represented = {attempt.evaluation_id for attempt in run.evaluation_attempts if attempt.evaluation_id is not None}
+        attempt_count += len(run.evaluation_attempts) + sum(evaluation.id not in represented for evaluation in run.evaluations)
     return {
         "run_count": len(runs),
         "evaluated_count": len(evaluations),
-        "evaluation_attempt_count": sum(max(len(run.evaluation_attempts), len(run.evaluations)) for run in runs),
+        "evaluation_attempt_count": attempt_count,
         "failed_evaluation_attempt_count": sum(attempt.status == "failed" for run in runs for attempt in run.evaluation_attempts),
         "pending_evaluation_attempt_count": sum(attempt.status == "pending" for run in runs for attempt in run.evaluation_attempts),
         "reevaluation_count": sum(max(len(run.evaluations) - 1, 0) for run in runs),

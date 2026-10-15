@@ -51,9 +51,28 @@ class RunCreate(BaseModel):
         return self
 
 
-class RunRead(RunCreate):
+class RunRead(BaseModel):
+    """Serialize stored records without retroactively applying new-write limits."""
     model_config = ConfigDict(from_attributes=True)
     id: int
+    workflow_name: str
+    source_type: str
+    input_text: str
+    output_text: str
+    prompt_version: str
+    model_name: str
+    provider: str
+    token_input: int | None
+    token_output: int | None
+    estimated_cost: float | None
+    latency_ms: int | None
+    status: str
+    error_message: str | None = None
+    regression_case_id: int | None = None
+    prompt_template_hash: str | None = None
+    generation_parameters: dict[str, str | int | float | bool | None] | None = None
+    dataset_name: str | None = None
+    experiment_name: str | None = None
     created_at: datetime
     usage_source: str = "caller-reported"
     legacy_usage: dict | None = None

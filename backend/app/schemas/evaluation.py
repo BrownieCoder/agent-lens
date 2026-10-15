@@ -35,9 +35,24 @@ class EvaluationPayload(BaseModel):
         return value
 
 
-class EvaluationRead(EvaluationPayload):
+class EvaluationRead(BaseModel):
+    """Historical output is not revalidated against the current provider rubric."""
     model_config = ConfigDict(from_attributes=True)
 
+    clarity_score: float
+    evidence_score: float
+    risk_coverage_score: float
+    specificity_score: float
+    actionability_score: float
+    novelty_score: float
+    overall_score: float
+    possible_hallucination: bool
+    too_generic: bool
+    missing_risks: bool
+    overconfident_language: bool
+    weak_evidence: bool
+    needs_human_review: bool
+    comments: str
     id: int
     run_id: int
     evaluator_type: str

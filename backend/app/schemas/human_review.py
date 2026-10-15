@@ -46,9 +46,21 @@ class HumanReviewUpdate(HumanReviewPayload):
     pass
 
 
-class HumanReviewRead(HumanReviewPayload):
+class HumanReviewRead(BaseModel):
+    """Read stored review evidence without write-time normalization or limits."""
     model_config = ConfigDict(from_attributes=True)
 
+    reviewer: str
+    review_decision: str
+    rubric_version: str
+    clarity_score: float
+    evidence_score: float
+    risk_coverage_score: float
+    specificity_score: float
+    actionability_score: float
+    novelty_score: float
+    overall_score: float
+    notes: str
     id: int
     run_id: int
     evaluation_id: int
