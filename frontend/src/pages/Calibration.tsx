@@ -27,7 +27,7 @@ export function Calibration() {
       const available = scopes.length ? scopes : await api.calibrationScopes();
       setScopes(available);
       const scope = available[index];
-      setData(await api.calibration(scope?.evaluator_model, scope?.rubric_version));
+      setData(await api.calibration(scope?.evaluator_model, scope?.rubric_version, scope?.judge_rubric_version));
     }
     catch (caught) { setError((caught as Error).message); }
     finally { setLoading(false); }
@@ -37,12 +37,12 @@ export function Calibration() {
 
   if (loading) return <div className="notice">Loading calibration…</div>;
   if (error) return <div className="notice error" role="alert"><p>Could not load calibration: {error}</p><button type="button" className="button" onClick={() => void load()}>Retry</button></div>;
-  if (!data || !data.calibrated_evaluation_count) return <div className="notice"><h1>No paired reviews yet</h1><p>Save a blind human review to compare it with an exact evaluator result.</p><Link className="button" to="/review-queue">Open blind-review queue</Link></div>;
+  if (!data || (!data.calibrated_evaluation_count && scopes.length === 0)) return <div className="notice"><h1>No paired reviews yet</h1><p>Save a blind human review to compare it with an exact evaluator result.</p><Link className="button" to="/review-queue">Open blind-review queue</Link></div>;
 
   return <>
     <header className="page-head"><div><p className="eyebrow">Calibration</p><h1>Human–model agreement</h1><p>Measure where evaluator scores align with, overrate, or underrate human judgments.</p></div><Link className="button" to="/review-queue">Review blind</Link></header>
-    {scopes.length > 1 && <label className="scope-select">Calibration scope<select value={scopeIndex} onChange={event => { const next = Number(event.target.value); setScopeIndex(next); void load(next); }}>{scopes.map((scope, index) => <option key={`${scope.evaluator_model}:${scope.rubric_version}`} value={index}>{scope.evaluator_model} · {scope.rubric_version} ({scope.review_count})</option>)}</select></label>}
-    <p className="muted">Scope: {data.evaluator_model} · {data.rubric_version}. Results never mix evaluator models or rubric versions.</p>
+    {scopes.length > 1 && <label className="scope-select">Calibration scope<select value={scopeIndex} onChange={event => { const next = Number(event.target.value); setScopeIndex(next); void load(next); }}>{scopes.map((scope, index) => <option key={`${scope.evaluator_model}:${scope.judge_rubric_version}:${scope.rubric_version}`} value={index}>{scope.evaluator_model} · judge {scope.judge_rubric_version} · human {scope.rubric_version} ({scope.review_count})</option>)}</select></label>}
+    <p className="muted">Scope: {data.evaluator_model} · judge {data.judge_rubric_version} · human {data.rubric_version}. Results never mix evaluator models or rubric versions.</p>
     <section className="score-grid">
       <ScoreCard label="Paired evaluations" value={String(data.calibrated_evaluation_count)} hint={`${data.review_count} human reviews`} />
       <ScoreCard label="Evaluation coverage" value={formatPercent(data.evaluation_coverage_rate)} hint={`${data.reviewed_evaluation_count} of ${data.evaluated_evaluation_count} evaluator results`} />
@@ -52,7 +52,7 @@ export function Calibration() {
     {data.calibrated_evaluation_count < 5 && <div className="notice warning">Directional only — fewer than five paired evaluations.</div>}
     <section className="panel calibration-definitions">
       <h2>How to read this</h2>
-      <p>A pair is one exact evaluator result and the consensus of its human reviews. Error is <code>model − human</code>. Positive bias means the model scores higher. MAE is the mean absolute error; agreement means an absolute gap of 0.5 or less. Model acceptance is reviewer-level: agree divided by agree + adjust + reject; pending reviews are excluded.</p>
+      <p>A pair is one exact evaluator result and the consensus of eligible initial human reviews. Scores edited after reveal are excluded from blind calibration; human labels are unverified and human judgment is not ground truth. Error is <code>model − human</code>. Positive bias means the model scores higher. MAE is the mean absolute error; agreement means an absolute gap of 0.5 or less. Model acceptance is reviewer-level: agree divided by agree + adjust + reject; pending reviews are excluded.</p>
       <div className="calibration-facts"><span>Bias <strong>{formatSigned(data.overall_bias)}</strong></span><span>Large disagreement <strong>{formatPercent(data.overall_large_disagreement_rate)}</strong></span><span>Correlation <strong>{formatMetric(data.overall_correlation)}</strong></span><span>Model accepted <strong>{formatPercent(data.acceptance_rate)}</strong></span></div>
     </section>
     <section className="panel">
@@ -66,10 +66,10 @@ export function Calibration() {
       <div className="section-title"><div><p className="eyebrow">Review first</p><h2>Largest disagreements</h2></div><small>Sorted by absolute overall gap</small></div>
       <p className="table-hint">Scroll horizontally to see all columns.</p>
       {data.disagreements.length ? <div className="table-wrap" role="region" aria-label="Largest model and human disagreements" tabIndex={0}><table><thead><tr><th>Run</th><th>Prompt</th><th>Evaluator</th><th>Model</th><th>Human</th><th>Gap</th><th>Decision</th><th>Reviewed</th></tr></thead><tbody>
-        {data.disagreements.map(item => <tr key={item.evaluation_id} className={item.dangerous ? "danger-row" : ""}><td><Link to={`/runs/${item.run_id}`}>#{item.run_id}{item.dangerous && <span className="danger-tag">High-risk</span>}</Link></td><td>{item.prompt_version}</td><td>{item.evaluator_model}</td><td>{item.judge_overall.toFixed(1)}</td><td>{item.human_overall.toFixed(1)}</td><td><span className={biasClass(item.signed_delta)}>{formatSigned(item.signed_delta)} · {biasText(item.signed_delta)}</span></td><td>{decisionLabel(item.decision)}</td><td>{new Date(item.review_date).toLocaleDateString()}</td></tr>)}
+        {data.disagreements.map(item => <tr key={item.evaluation_id} className={item.dangerous ? "danger-row" : ""}><td><Link to={`/runs/${item.run_id}?evaluation_id=${item.evaluation_id}`}>#{item.run_id}{item.dangerous && <span className="danger-tag">High-risk</span>}</Link></td><td>{item.prompt_version}</td><td>{item.evaluator_model}</td><td>{item.judge_overall.toFixed(1)}</td><td>{item.human_overall.toFixed(1)}</td><td><span className={biasClass(item.signed_delta)}>{formatSigned(item.signed_delta)} · {biasText(item.signed_delta)}</span></td><td>{decisionLabel(item.decision)}</td><td>{new Date(item.review_date).toLocaleDateString()}</td></tr>)}
       </tbody></table></div> : <p className="muted">No disagreements to show.</p>}
     </section>
-    {data.dangerous_samples.length > 0 && <section className="panel"><p className="eyebrow">Safety review</p><h2>High-risk overrating</h2><p>These cases have model score ≥ 4.0 and human consensus ≤ 2.5. They are listed independently so they cannot be hidden by the top-disagreement limit.</p><ul className="review-history">{data.dangerous_samples.map(item => <li key={item.evaluation_id}><Link to={`/runs/${item.run_id}`}>Run #{item.run_id} · evaluation #{item.evaluation_id}</Link><span>Model {item.judge_overall.toFixed(1)} · human {item.human_overall.toFixed(1)}</span></li>)}</ul></section>}
+    {data.dangerous_samples.length > 0 && <section className="panel"><p className="eyebrow">Safety review</p><h2>High-risk overrating</h2><p>These cases have model score ≥ 4.0 and human consensus ≤ 2.5. They are listed independently so they cannot be hidden by the top-disagreement limit.</p><ul className="review-history">{data.dangerous_samples.map(item => <li key={item.evaluation_id}><Link to={`/runs/${item.run_id}?evaluation_id=${item.evaluation_id}`}>Run #{item.run_id} · evaluation #{item.evaluation_id}</Link><span>Model {item.judge_overall.toFixed(1)} · human {item.human_overall.toFixed(1)}</span></li>)}</ul></section>}
   </>;
 }
 

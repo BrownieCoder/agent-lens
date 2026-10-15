@@ -1,48 +1,60 @@
 from datetime import date
 
+from .analytics import COMPARISON_NOTE
+
+
+def _value(value, kind="number"):
+    if value is None:
+        return "N/A"
+    if kind == "cost":
+        return f"${value:.4f}"
+    if kind == "latency":
+        return f"{value:.0f} ms"
+    if kind == "rate":
+        return f"{value:.1%}"
+    return str(value)
+
+
+def _text(value):
+    return str(value).replace("\\", "\\\\").replace("|", "\\|").replace("\n", " ").replace("\r", " ").replace("<", "&lt;").replace(">", "&gt;")
+
 
 def render_markdown_summary(summary: dict, prompt_rows: list[dict], date_from: date | None, date_to: date | None) -> str:
-    period = f"{date_from or 'beginning'} to {date_to or 'present'}"
-    ranked = sorted(prompt_rows, key=lambda row: row.get("average_overall_score") or 0, reverse=True)
-    best = ranked[0]["prompt_version"] if ranked else "N/A"
-    worst = ranked[-1]["prompt_version"] if ranked else "N/A"
-    flags = summary.get("common_flags", {})
-    common = sorted(flags.items(), key=lambda item: item[1], reverse=True)
-    patterns = ", ".join(f"{name}: {count}" for name, count in common if count) or "No evaluated failure flags"
-
-    recommendations: list[str] = []
-    if summary.get("failure_rate", 0) > 0.05:
-        recommendations.append("Investigate failed runs and add representative cases to the regression set.")
-    if flags.get("weak_evidence", 0):
-        recommendations.append("Require citations or source-linked evidence in the generation prompt.")
-    if flags.get("missing_risks", 0):
-        recommendations.append("Add an explicit downside and uncertainty section to the report contract.")
-    if not recommendations:
-        recommendations.append("Expand the regression set and monitor for prompt-version regressions.")
-
+    period = f"{date_from or 'beginning'} to {date_to or 'present'} (UTC)"
     rows = "\n".join(
-        f"| {row['prompt_version']} | {row['run_count']} | {row['average_overall_score'] or 'N/A'} | "
-        f"${row['average_cost']:.4f} | {row['average_latency_ms']:.0f} ms | {row['failure_rate']:.1%} |"
+        f"| {_text(row['prompt_version'])} | {row['run_count']} | {row['evaluated_count']} | {_value(row['average_overall_score'])} | "
+        f"{_value(row['average_cost'], 'cost')} (n={row['cost_sample_count']}) | {_value(row['average_latency_ms'], 'latency')} (n={row['latency_sample_count']}) | "
+        f"{_value(row['failure_rate'], 'rate')} | {row['matched_input_count']} / {row['unpaired_input_count']} / {row['duplicate_input_count']} |"
         for row in prompt_rows
-    ) or "| No data | 0 | N/A | $0 | 0 ms | 0% |"
-    recs = "\n".join(f"- {item}" for item in recommendations)
+    ) or "| No data | 0 | 0 | N/A | N/A | N/A | N/A | 0 / 0 / 0 |"
+    confounds = "\n".join(
+        f"- {_text(row['prompt_version'])}: workflows={_text(', '.join(row['workflows']))}; generation models={_text(', '.join(row['models']))}; "
+        f"judges={_text(', '.join(row['evaluator_models']))}; judge rubrics={_text(', '.join(row['judge_rubric_versions']))}; reevaluations={row['reevaluation_count']}; missing reproducibility metadata={row['missing_provenance_count']}; datasets={_text(', '.join(row['datasets'])) or 'not recorded'}; experiments={_text(', '.join(row['experiments'])) or 'not recorded'}."
+        for row in prompt_rows
+    )
+    patterns = ", ".join(f"{name}: {count}" for name, count in summary.get("common_flags", {}).items() if count) or "No evaluated failure flags"
     return f"""# Agent Lens Evaluation Summary
 
 **Date range:** {period}
 **Runs:** {summary.get('total_runs', 0)}
-**Average overall score:** {summary.get('average_overall_score') or 'N/A'}
-**Average cost:** ${summary.get('average_cost', 0):.4f}
-**Average latency:** {summary.get('average_latency_ms', 0):.0f} ms
-**Failure rate:** {summary.get('failure_rate', 0):.1%}
+**Evaluated runs:** {summary.get('evaluated_count', 0)}
+**Failed / pending judge attempts:** {summary.get('failed_evaluation_attempt_count', 0)} / {summary.get('pending_evaluation_attempt_count', 0)}
+**Average overall score:** {_value(summary.get('average_overall_score'))}
+**Average generation cost (USD):** {_value(summary.get('average_cost'), 'cost')} (n={summary.get('cost_sample_count', 0)})
+**Average generation latency:** {_value(summary.get('average_latency_ms'), 'latency')} (n={summary.get('latency_sample_count', 0)})
+**Failure rate:** {_value(summary.get('failure_rate'), 'rate')}
+
+Costs, tokens and latency are caller-reported generation measurements; unknown values are excluded from means. Judge/retry cost is not measured. Mock measurements are synthetic, not billing evidence. Legacy usage records: {summary.get("legacy_usage_count", 0)}; ambiguous legacy zeros are excluded as unknown, with original measurements preserved separately.
 
 ## Prompt Versions
 
-| Prompt | Runs | Score | Cost | Latency | Failure rate |
-|---|---:|---:|---:|---:|---:|
+{COMPARISON_NOTE}
+
+| Prompt | Runs | Evaluated | Score | Cost | Latency | Failure rate | Matched / unpaired / duplicates |
+|---|---:|---:|---:|---:|---:|---:|---:|
 {rows}
 
-- Best-performing prompt: **{best}**
-- Worst-performing prompt: **{worst}**
+{confounds}
 
 ## Common Failure Patterns
 
@@ -50,5 +62,5 @@ def render_markdown_summary(summary: dict, prompt_rows: list[dict], date_from: d
 
 ## Recommended Next Actions
 
-{recs}
+Review flagged outputs and compare controlled, matched inputs before changing prompts. Evaluator scores and human labels are review evidence, not verified external facts or ground truth.
 """

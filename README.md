@@ -59,7 +59,7 @@ The sample data still reflects that original financial-research use case. The st
 
 ## Quick start
 
-Requirements: Python 3.11+, Node.js 20+, and `make`.
+Requirements: macOS/Linux, Python 3.11+, Node.js 20+, and `make`. `make setup` installs exact Python transitive versions and the npm lock.
 
 ```bash
 git clone https://github.com/BrownieCoder/agent-lens.git
@@ -101,7 +101,7 @@ Or override it for one request:
 ```bash
 curl -X POST http://localhost:8000/runs/1/evaluate \
   -H 'Content-Type: application/json' \
-  -d '{"evaluator_type":"deepseek"}'
+  -d '{"evaluator_type":"deepseek","request_id":"replace-with-a-new-unique-request-id"}'
 ```
 
 Provider calls incur provider charges. Model-produced JSON is always validated before persistence; malformed or empty provider output returns HTTP `502` instead of being stored.
@@ -117,7 +117,7 @@ The command reads the corresponding key from `backend/.env`, prints only the pro
 
 ## Human review and calibration
 
-Start human judgment from the dedicated **Blind review** queue. It deliberately omits evaluator scores, flags, rankings, and model-priority sorting; the general Runs and analytics pages are not blind entry points. On the run page, Agent Lens then hides the model score until the first human rating is saved. The review is bound to that exact `evaluation_id`, so rerunning an evaluator cannot silently change the calibration pair. After the blind rating, the reviewer can compare scores and accept, adjust, or reject the model assessment.
+Start human judgment from the dedicated **Blind review** queue. It deliberately omits evaluator scores, flags, rankings, and model-priority sorting; the general Runs and analytics pages are not blind entry points. The run page first uses a score-free detail payload and pins the selected evaluation ID in the URL; only after the local human rating exists does it fetch model scores. This is presentation-level blinding, not permission isolation: other analytics APIs remain accessible to the same trusted operator. The review is bound to that exact `evaluation_id`, so rerunning an evaluator cannot silently change the calibration pair. After the blind rating, the reviewer can compare scores and accept, adjust, or reject the model assessment.
 
 The Calibration page aggregates one human consensus per evaluation. It defines signed error as `model − human` and reports:
 
@@ -130,7 +130,18 @@ The Calibration page aggregates one human consensus per evaluation. It defines s
 
 Human ratings are calibration evidence, not automatic ground truth. Multiple reviews of one evaluation are averaged before that evaluation enters aggregate metrics, preventing heavily reviewed samples from receiving extra weight.
 
-Calibration is always scoped to one `evaluator_model` and one `rubric_version`; incompatible judge or rubric populations are never averaged together. Evaluation coverage counts reviewed evaluator results over all evaluator results in that model scope. The acceptance rate is reviewer-level: `agree / (agree + adjust + reject)`, excluding pending reviews. Editing a score after model reveal resets its decision to pending and records that provenance.
+Calibration is scoped to one `evaluator_model`, one judge rubric version and one human `rubric_version`; incompatible judge or rubric populations are never averaged together. Evaluation coverage counts reviewed evaluator results over all evaluator results in that model scope. The acceptance rate is reviewer-level: `agree / (agree + adjust + reject)`, excluding pending reviews. Editing a score after model reveal resets its decision to pending, preserves the initial score snapshot and excludes that review from independent blind-calibration metrics. Legacy edited scores without a recoverable original remain explicitly unknown. Reviewer and review-rubric identities cannot be reassigned by editing.
+
+## Interpreting results
+
+- Hosted judges assign six dimension scores and an independent overall judgment, all finite numbers from 1 to 5; overall is not a computed weighted sum. Risk flags are independent indicators. The deterministic mock uses the mean of its six heuristic dimensions minus a 0.3 generic-output penalty, clamped to 1–5; mock scores are demonstrations, not a substitute for a validated judge.
+- Evidence scores measure the supplied report's support and citation presentation. No browsing or external fact-verification is performed. Reports are untrusted judge input, never instructions or permission to use tools. Prompt-injection fixtures verify instruction boundaries and parsing, not immunity of a real model.
+- Prompt cards are observational cohorts. They show matched and unpaired inputs, repeated runs, generation/judge models and missing provenance; matching alone does not control confounders or establish causation. Scores use each run's latest result; failed runs are included in failure denominators and any scored failures remain in quality summaries. New API evaluations reject failed runs or empty output; previously evaluated failures remain historical evidence. Reruns change the latest-summary population but do not move historical human reviews.
+- Generation cost is caller-reported **USD**, not a provider invoice; token/latency fields also come from the caller. Missing measurements are unknown, excluded from means, and accompanied by known-value counts. Judge and retry charges/latency are excluded from generation averages. Mock/seed amounts are synthetic estimates. Upgraded legacy measurements are labeled unverified; old zero values become unknown and leave averages, while their original raw values remain in provenance. Nonzero historical estimates stay included.
+- In Overview, apply UTC dates, then **Export displayed summary**. All contributing widgets and the Markdown summary use the applied date scope. Runs search queries the stored dataset and offers pagination; Blind review also offers pages.
+- The repository stores run input/output and optional prompt-template hash, generation parameters, dataset and experiment labels. Missing provenance is reported; arbitrary prompt labels do not prove identical templates. See the controlled [experiment fixture](docs/EXPERIMENT.md) for exploration/holdout separation.
+
+Provider requests have a 60-second timeout, no automatic SDK retries and a 2,000-token output cap. A failed or ambiguous attempt must not silently become successful evidence or trigger another paid call. Keep the same `request_id` for a retry; an intentional new evaluation needs a new ID. Inspect attempt status before repeating a timed-out request. A provider may charge even when no valid result is returned. No real provider call or human effectiveness result is implied by passing offline tests.
 
 ## Architecture
 
@@ -168,7 +179,9 @@ frontend/src/
 | POST | `/runs` | Log a workflow run |
 | GET | `/runs` | Filter and list runs |
 | GET | `/runs/{id}` | Inspect a run and its evaluations |
-| POST | `/runs/{id}/evaluate` | Run Mock, OpenAI, or DeepSeek evaluation |
+| POST | `/runs/{id}/evaluate` | Run Mock, OpenAI, or DeepSeek evaluation; use a stable request ID for retries |
+| GET | `/runs/{id}/blind` | Score-free input/output and exact selected evaluation metadata |
+| GET | `/runs/{id}/evaluation-attempts` | Inspect safe attempt states without raw provider responses |
 | GET | `/runs/{id}/evaluation` | Fetch the latest evaluation |
 | POST/GET | `/runs/{id}/human-reviews` | Create or list reviews bound to an evaluation |
 | GET/PUT | `/human-reviews/{id}` | Read or update one human review |
@@ -189,11 +202,11 @@ frontend/src/
 make check
 ```
 
-This runs backend tests, Python compilation, the frontend build, and the npm audit. CI runs the same checks on pushes and pull requests.
+This runs backend tests, Python compilation, the frontend build, and the npm audit. CI runs the same checks on supported feature-branch pushes and pull requests. A passing historical run is not current acceptance: release candidates also require [the frozen contract](docs/ACCEPTANCE_CONTRACT.md), [fresh independent reviews](docs/DELIVERY_WORKFLOW.md), actual browser verification and recovery checks.
 
 ## Current boundaries
 
-This alpha release is designed for local development and trusted networks. It does not yet include authentication, authorization, multi-tenancy, redaction, rate limiting, or schema migrations. Reviewer labels are local identifiers rather than verified identities, and review notes may contain sensitive context. Do not expose the development servers publicly or ingest confidential data without adding the controls required by your environment. See [SECURITY.md](SECURITY.md).
+This candidate supports one operator, loopback-bound services, one backend worker and local SQLite with non-sensitive data. Direct LAN/public serving is unsupported; remote access requires authenticated SSH forwarding. It does not include authentication, authorization, multi-tenancy, automatic redaction, rate limiting or encryption at rest. Host/Origin and request-size guards reduce accidental exposure but are not authentication. Reviewer labels are unverified local identifiers. Supported alpha schemas have a transactional startup upgrade; general-purpose migrations/Alembic and automatic downgrade are not provided. See [SECURITY.md](SECURITY.md) and [installation, backup, upgrade and rollback](docs/OPERATIONS.md).
 
 LLM-as-judge output is a signal, not ground truth. Calibrate scoring against human review before using it for high-stakes decisions.
 

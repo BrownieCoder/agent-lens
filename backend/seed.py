@@ -38,8 +38,8 @@ def main() -> None:
     random.seed(7)
     init_db()
     with SessionLocal() as db:
-        if db.query(WorkflowRun).count():
-            print("Seed skipped: workflow_runs already contains data.")
+        if any(db.query(model).first() is not None for model in (WorkflowRun, RegressionCase, Evaluation, HumanReview)):
+            print("Seed skipped: existing workspace data is preserved.")
             return
         evaluator = MockEvaluator()
         cases = []

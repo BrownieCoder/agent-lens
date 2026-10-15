@@ -127,7 +127,7 @@ def test_provider_failure_returns_bad_gateway(client: TestClient, monkeypatch: p
 
     monkeypatch.setattr(evaluations, "get_evaluator", lambda *_: BrokenEvaluator())
     run_id = client.post("/runs", json=sample_run()).json()["id"]
-    response = client.post(f"/runs/{run_id}/evaluate", json={"evaluator_type": "openai"})
+    response = client.post(f"/runs/{run_id}/evaluate", json={"evaluator_type": "openai", "request_id": "provider-failure-fixture"})
     assert response.status_code == 502
     assert response.json()["detail"] == "Provider did not return a valid evaluation"
 

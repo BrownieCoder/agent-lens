@@ -39,7 +39,7 @@ def create_human_review(
     )
     if duplicate:
         raise HTTPException(status_code=409, detail="Reviewer already reviewed this evaluation")
-    review = HumanReview(**payload.model_dump())
+    review = HumanReview(**payload.model_dump(), original_scores={key: value for key, value in payload.model_dump().items() if key.endswith("_score")})
     db.add(review)
     try:
         db.commit()
@@ -87,6 +87,8 @@ def update_human_review(
     review = db.get(HumanReview, review_id)
     if not review:
         raise HTTPException(status_code=404, detail="Human review not found")
+    if payload.reviewer != review.reviewer or payload.rubric_version != review.rubric_version:
+        raise HTTPException(status_code=409, detail="Reviewer and rubric are immutable")
     score_fields = {
         "clarity_score", "evidence_score", "risk_coverage_score", "specificity_score",
         "actionability_score", "novelty_score", "overall_score",
@@ -152,11 +154,12 @@ def human_review_queue(
 def calibration_summary(
     evaluator_model: str | None = None,
     rubric_version: str | None = None,
+    judge_rubric_version: str = "research-report-v1",
     workflow_name: str | None = None,
     prompt_version: str | None = None,
     db: Session = Depends(get_db),
 ) -> dict:
-    scopes = calibration_scopes(db)
+    scopes = calibration_scopes(db, judge_rubric_version)
     if (evaluator_model is None) != (rubric_version is None):
         raise HTTPException(status_code=422, detail="evaluator_model and rubric_version must be provided together")
     if evaluator_model is None and len(scopes) > 1:
@@ -164,15 +167,16 @@ def calibration_summary(
     if evaluator_model is None and scopes:
         evaluator_model = scopes[0][0]
         rubric_version = scopes[0][1]
-    return calibration_data(db, evaluator_model, rubric_version, workflow_name, prompt_version)
+    return calibration_data(db, evaluator_model, rubric_version, workflow_name, prompt_version, judge_rubric_version)
 
 
-def calibration_scopes(db: Session) -> list[tuple[str, str, int]]:
+def calibration_scopes(db: Session, judge_rubric_version: str = "research-report-v1") -> list[tuple[str, str, int]]:
     return [
         (model, rubric, int(count))
         for model, rubric, count in db.execute(
             select(Evaluation.evaluator_model, HumanReview.rubric_version, func.count(HumanReview.id))
             .join(HumanReview, HumanReview.evaluation_id == Evaluation.id)
+            .where(Evaluation.rubric_version == judge_rubric_version)
             .group_by(Evaluation.evaluator_model, HumanReview.rubric_version)
             .order_by(Evaluation.evaluator_model, HumanReview.rubric_version)
         ).all()
@@ -182,6 +186,11 @@ def calibration_scopes(db: Session) -> list[tuple[str, str, int]]:
 @router.get("/dashboard/calibration/scopes", response_model=list[CalibrationScope])
 def list_calibration_scopes(db: Session = Depends(get_db)) -> list[dict]:
     return [
-        {"evaluator_model": model, "rubric_version": rubric, "review_count": count}
-        for model, rubric, count in calibration_scopes(db)
+        {"evaluator_model": model, "rubric_version": rubric, "judge_rubric_version": judge_rubric, "review_count": int(count)}
+        for model, rubric, judge_rubric, count in db.execute(
+            select(Evaluation.evaluator_model, HumanReview.rubric_version, Evaluation.rubric_version, func.count(HumanReview.id))
+            .join(HumanReview, HumanReview.evaluation_id == Evaluation.id)
+            .group_by(Evaluation.evaluator_model, HumanReview.rubric_version, Evaluation.rubric_version)
+            .order_by(Evaluation.evaluator_model, HumanReview.rubric_version, Evaluation.rubric_version)
+        ).all()
     ]

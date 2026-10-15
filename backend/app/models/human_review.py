@@ -1,10 +1,10 @@
 from datetime import datetime, timezone
 from typing import TYPE_CHECKING
 
-from sqlalchemy import Boolean, CheckConstraint, DateTime, Float, ForeignKey, String, Text, UniqueConstraint
+from sqlalchemy import JSON, Boolean, CheckConstraint, Float, ForeignKey, String, Text, UniqueConstraint
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
-from ..db import Base
+from ..db import Base, UTCDateTime
 
 if TYPE_CHECKING:
     from .evaluation import Evaluation
@@ -36,12 +36,13 @@ class HumanReview(Base):
     novelty_score: Mapped[float] = mapped_column(Float)
     overall_score: Mapped[float] = mapped_column(Float)
     notes: Mapped[str] = mapped_column(Text, default="")
+    original_scores: Mapped[dict | None] = mapped_column(JSON, nullable=True)
     scores_edited_after_reveal: Mapped[bool] = mapped_column(Boolean, default=False)
     created_at: Mapped[datetime] = mapped_column(
-        DateTime(timezone=True), default=lambda: datetime.now(timezone.utc), index=True
+        UTCDateTime(), default=lambda: datetime.now(timezone.utc), index=True
     )
     updated_at: Mapped[datetime] = mapped_column(
-        DateTime(timezone=True),
+        UTCDateTime(),
         default=lambda: datetime.now(timezone.utc),
         onupdate=lambda: datetime.now(timezone.utc),
     )

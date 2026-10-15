@@ -80,15 +80,16 @@ def calibration_data(
     rubric_version: str | None = None,
     workflow_name: str | None = None,
     prompt_version: str | None = None,
+    judge_rubric_version: str = "research-report-v1",
 ) -> dict:
-    evaluation_filters = []
+    evaluation_filters = [Evaluation.rubric_version == judge_rubric_version]
     if evaluator_model:
         evaluation_filters.append(Evaluation.evaluator_model == evaluator_model)
     if workflow_name:
         evaluation_filters.append(WorkflowRun.workflow_name == workflow_name)
     if prompt_version:
         evaluation_filters.append(WorkflowRun.prompt_version == prompt_version)
-    review_filters = [*evaluation_filters]
+    review_filters = [*evaluation_filters, HumanReview.scores_edited_after_reveal.is_(False)]
     if rubric_version:
         review_filters.append(HumanReview.rubric_version == rubric_version)
 
@@ -166,7 +167,9 @@ def calibration_data(
     reviewed_run_count = len({run.id for _, _, run in rows})
     dangerous_samples = [item for item in disagreements if item["dangerous"]]
     return {
+        "population_note": "Score metrics weight each evaluation consensus equally and exclude all post-reveal score edits. Acceptance is agree / non-pending eligible review decisions, not an evaluation-weighted metric. Reviewer labels are unverified.",
         "evaluator_model": evaluator_model,
+        "judge_rubric_version": judge_rubric_version,
         "rubric_version": rubric_version,
         "review_count": len(rows),
         "calibrated_evaluation_count": len(grouped),

@@ -1,29 +1,16 @@
-# Release checklist
+# Release candidate checklist
 
-## Repository
+Start a new external evidence record for each candidate. These boxes are intentionally unclaimed; historical alpha releases are not evidence for a new SHA. See [acceptance contract](ACCEPTANCE_CONTRACT.md) and [review workflow](DELIVERY_WORKFLOW.md).
 
-- [x] Replace placeholder repository URLs after publishing.
-- [x] Confirm MIT license owner and year (`Wayne Zheng`, 2026).
-- [x] Enable GitHub private vulnerability reporting.
-- [x] Enable branch protection and require the CI workflow.
-- [x] Add repository description and topics.
-- [x] Upload `docs/assets/social-preview.png` as the repository social preview.
+- [ ] Record full local/remote head, base, branch, frozen contract hash and clean source status.
+- [ ] Fresh locked install, start/stop, health, offline mock and empty database verified.
+- [ ] Backend tests, frontend build, compile and network dependency audit actually pass; exact candidate CI jobs executed.
+- [ ] Browser record/evaluate/compare/blind-score/reveal/decision/edit/calibration/history/regression/export workflow verified with synthetic data, plus pagination/search/date/error/refresh checks.
+- [ ] Independent golden metrics, strict provider error matrix, duplicate-call protection, safe migration failure, persistence, backup and restore verified.
+- [ ] README in both languages, configuration, API schema, operations/rollback, changelog and limitations agree with code.
+- [ ] Both fresh reviewers' immutable initial and reconciliation reports bind exact SHA/base/contract; all critical historical findings closed; no unaccepted P2.
+- [ ] Live provider connectivity and real human-effectiveness evidence reported separately; absence marked UNVERIFIED, never replaced by synthetic reviews.
+- [ ] Reports/screenshots contain synthetic data only and no secrets.
+- [ ] Human separately authorizes merge, release/tag and deployment. Never publish based only on a green CI badge.
 
-## Quality
-
-- [x] `make check` passes locally with pinned dependencies.
-- [x] `make seed` creates 12 cases and 24 paired runs in an isolated database.
-- [x] Dashboard, run detail, Prompt comparison, regression, and 404 pages pass browser smoke tests.
-- [x] Mock evaluator works without credentials.
-- [x] Run `make smoke-provider` with a real DeepSeek key.
-- Optional follow-up: run `make smoke-provider PROVIDER=openai` with a real OpenAI key.
-
-## Release
-
-- [x] Move `0.1.0-alpha` changelog entry from Unreleased to the release date.
-- [x] Create tag `v0.1.0-alpha` from `main`.
-- [x] Create a GitHub pre-release using the changelog notes.
-- [x] Verify `make setup`, `make seed`, and `make check` from a fresh public clone.
-- [x] Share only synthetic screenshots and example data.
-
-Authenticated repository setup is documented in [GITHUB_RELEASE_SETUP.md](GITHUB_RELEASE_SETUP.md).
+Repository permissions/branch protections must be inspected before claiming enforcement. The review workflow is a manual process gate unless protected infrastructure independently attests it; candidate code cannot approve itself. No repository-management changes are implied by this checklist.
